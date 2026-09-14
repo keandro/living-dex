@@ -30,15 +30,40 @@ estilo.css          CSS compartilhado por todas as páginas (variáveis, sidebar
 tema-preload.js     aplica o tema salvo antes da 1ª pintura, pra não dar flash — sem defer/async
 comum.js            compartilhado: api() e o botão de tema (todas as páginas carregam)
 livingdex.js        compartilhado: TIPO/CHART, montagem das caixas e o modal de detalhe —
-                    exporta iniciarLivingDex(idsPokedex), quem chama é o JS de cada página
-index.html + home.js              página inicial: lista as living dex com o progresso de cada uma
-paldea.html + dex.js              Paldea + Kitakami + Blueberry — chama iniciarLivingDex([1,2,3])
-legends-za.html + legends-za.js   Lumiose + Mega Dimension — chama iniciarLivingDex([4,5])
-sword-shield.html + sword-shield.js   Galar + Isle of Armor + Crown Tundra — iniciarLivingDex([6,7,8])
+                    exporta iniciarLivingDex(livingDexId, idsPokedex), quem chama é o JS de cada página
+index.html + home.js   página inicial: lista as living dex com o progresso de cada uma
 baixar_sprites.py   baixa os sprites (normal + shiny) do pokemondb para sprites/, para uso offline
 sprites/            sprites locais: sprites/normal/<slug>.jpg e sprites/shiny/<slug>.jpg
 fonts/jost.woff2    fonte Jost (variável, pesos 300–600) baixada do Google Fonts, servida local
 ```
+
+Cada living dex é um par `<jogo>.html` + `<jogo>.js`, todos seguindo o mesmo molde (ver
+"Decisões já tomadas"). As 19 atuais, em ordem de criação:
+
+```
+paldea.html                        Scarlet & Violet     livingDexId 1
+legends-za.html                    Legends: Z-A         livingDexId 2
+sword-shield.html                  Sword & Shield       livingDexId 3
+x-y.html                           X & Y                livingDexId 4
+heartgold-soulsilver.html          HeartGold & SoulSilver  livingDexId 5
+red-blue-yellow.html               Red, Blue & Yellow   livingDexId 6
+gold-silver-crystal.html           Gold, Silver & Crystal  livingDexId 7
+ruby-sapphire-emerald.html         Ruby, Sapphire & Emerald  livingDexId 8
+firered-leafgreen.html             FireRed & LeafGreen  livingDexId 9
+diamond-pearl.html                 Diamond & Pearl      livingDexId 10
+platinum.html                      Platinum             livingDexId 11
+black-white.html                   Black & White        livingDexId 12
+black-white-2.html                 Black 2 & White 2    livingDexId 13
+omega-ruby-alpha-sapphire.html     Omega Ruby & Alpha Sapphire  livingDexId 14
+sun-moon.html                      Sun & Moon           livingDexId 15
+ultra-sun-ultra-moon.html          Ultra Sun & Ultra Moon  livingDexId 16
+lets-go-pikachu-eevee.html         Let's Go, Pikachu & Eevee  livingDexId 17
+brilliant-diamond-shining-pearl.html  Brilliant Diamond & Shining Pearl  livingDexId 18
+legends-arceus.html                Legends: Arceus      livingDexId 19
+```
+
+Só `dex.js` (Paldea) foge do padrão `<nome-do-arquivo>.js` porque foi criado antes de virar
+convenção — funciona igual, só o nome que destoa.
 
 Rodar: `python servidor.py` e abrir `http://localhost:8000`.
 Porta alternativa: `$env:PORTA=9000; python servidor.py`. Escuta em `0.0.0.0`, então dá para abrir
@@ -62,18 +87,27 @@ pokemon_forma_especial(id, slug, tipo['mega'|'gigantamax'], nome, sprite, tipo1,
 ```
 
 Conteúdo atual: 1025 espécies + 60 formas regionais = **1085 registros**; 553 evoluções;
-oito Pokédex cadastradas, em três living dex:
-- **Scarlet & Violet**: Paldea (400), Kitakami (99), Blueberry (165) — 664 entradas.
-- **Legends: Z-A**: Lumiose (232, jogo base), Mega Dimension (132, DLC) — 364 entradas.
-- **Sword & Shield**: Galar (400, jogo base), Isle of Armor (110, DLC), Crown Tundra (74, DLC)
-  — 584 entradas.
+**26 Pokédex cadastradas, em 19 living dex** (5.360 entradas no total) — praticamente todo jogo
+principal da série está coberto (ver lista completa de arquivos acima). As únicas com mais de uma
+Pokédex: Scarlet & Violet (Paldea+Kitakami+Blueberry), Legends: Z-A (Lumiose+Mega Dimension),
+Sword & Shield (Galar+Isle of Armor+Crown Tundra) e X & Y (Central/Coastal/Mountain Kalos) — o
+resto é uma Pokédex só por living dex.
 
-Dentro de cada living dex os Pokémon não se repetem entre as Pokédex. Pra Scarlet & Violet e
-Legends: Z-A isso já vinha pronto da fonte (pokemondb pré-filtra). Pra Sword & Shield **não**
-vinha — as páginas de Isle of Armor/Crown Tundra do pokemondb listam de novo um monte de Pokémon
-que já tavam na Pokédex base (ex.: Isle of Armor repete 101 dos 400 de Galar) — por isso tive que
-filtrar na mão: cada entrada só entra na primeira Pokédex em que aparece (ordem: Galar → Isle of
-Armor → Crown Tundra), renumerando a ordem regional depois de tirar as repetidas.
+Dentro de cada living dex os Pokémon não se repetem entre as Pokédex. Isso já vinha pronto da
+fonte pra quase todo mundo (pokemondb pré-filtra os DLC contra a base, ou nem tem múltiplas
+Pokédex pra repetir). A **exceção é Sword & Shield**: as páginas de Isle of Armor/Crown Tundra do
+pokemondb listam de novo um monte de Pokémon que já tavam na Pokédex base (ex.: Isle of Armor
+repete 101 dos 400 de Galar) — tive que filtrar na mão: cada entrada só entra na primeira Pokédex
+em que aparece (ordem: Galar → Isle of Armor → Crown Tundra), renumerando a ordem regional depois
+de tirar as repetidas.
+
+Como os `nome` de Pokédex de living dex diferentes podem cair na mesma região (Kanto aparece em
+RBY, FRLG e Let's Go; Johto em GSC e HGSS; Hoenn em RSE e ORAS; Sinnoh em D/P, Platinum e BDSP;
+Alola em S/M e USUM), e a coluna `pokedex.nome` é `UNIQUE`, o padrão pra desambiguar é
+`"Região (abreviação do jogo)"` — `Kanto (RBY)`, `Kanto (FRLG)`, `Kanto (LGPE)`, `Johto (GSC)`,
+`Johto (HGSS)`, `Hoenn (RSE)`, `Hoenn (ORAS)`, `Sinnoh (D/P)`, `Sinnoh (Pt)`, `Sinnoh (BDSP)`,
+`Alola (S/M)`, `Alola (USUM)`. Só usa o nome puro da região quando ela não se repete em nenhuma
+outra living dex (Paldea, Galar, Lumiose, as três de Kalos, Hisui).
 
 Além disso, **125 formas especiais** em `pokemon_forma_especial` (não são Pokédex, não contam
 capturado nem entram nas caixas — são só informação extra mostrada no modal): 92 Mega Evoluções
@@ -85,7 +119,9 @@ capturado nem entram nas caixas — são só informação extra mostrada no moda
 - **`slug` é a chave de tudo**, inclusive da captura. Segue o padrão do pokemondb, que já separa
   formas: `wooper-paldean`, `tauros-paldean-combat`, `exeggutor-alolan`, `qwilfish-hisuian`.
   O mesmo slug serve de nome do arquivo de sprite.
-- Marcar captura por slug é o que evita contar duas vezes o mesmo Pokémon em Pokédex diferentes.
+- Marcar captura por slug (dentro da mesma living dex) é o que evita contar duas vezes o mesmo
+  Pokémon em Pokédex diferentes do mesmo jogo. Entre living dex diferentes a captura já **não** é
+  compartilhada — ver a decisão sobre `captura(living_dex_id, slug)` mais abaixo.
 - Tipos, stats, habilidades e grupos de ovo ficam no banco em **inglês, minúsculo**
   (`fire`, `special-attack`, `poison-point`, `water1`). A tradução para português é feita no
   front, nos mapas `TIPO`, `STATS` e `GRUPO_OVO` do `livingdex.js`.
@@ -155,9 +191,34 @@ nacional) foram conferidos no pokemondb, direto das páginas de cada jogo:
   `.../sword-shield/isle-of-armor` (211 antes de filtrar repetido) +
   `.../sword-shield/crown-tundra` (210 antes de filtrar repetido). Diferente da Z-A, essas páginas
   **repetem** Pokémon da Pokédex base — tive que deduplicar na mão (ver seção Banco).
-Pra uma Pokédex nova (Johto, Kanto, Hisui…), o caminho é o mesmo: achar a página do jogo no
-pokemondb, extrair número regional + slug + tipos na ordem que aparece, conferir que o slug já
-existe no catálogo (senão precisa adicionar o Pokémon primeiro), **deduplicar contra as Pokédex já
+- X & Y: `pokemondb.net/pokedex/game/x-y`, uma página só com três seções (`#dex-central-kalos`,
+  `#dex-coastal-kalos`, `#dex-mountain-kalos`) — 153+153+151, sem repetir entre si. O jogo não tem
+  DLC. Por ser Geração 6, a página mostra sprite do conjunto antigo `bank` (`.png`, sem forma
+  regional nenhuma ainda existir), não `home` — não afeta nada aqui porque o app sempre usa o
+  conjunto `home` pra tudo, independente de quando o Pokémon apareceu pela primeira vez. A página
+  também tem um link de "National Pokédex" na barra lateral do próprio pokemondb — **não é** uma
+  seção da Pokédex do jogo, é só um link de navegação do site, então não teve nada pra ignorar de
+  propósito.
+- HeartGold & SoulSilver: `pokemondb.net/pokedex/game/heartgold-soulsilver` — uma Pokédex só (o
+  "New Johto Dex", 256 entradas), sem seções e sem DLC. Sprite do conjunto `heartgold-soulsilver`
+  na página (mais um formato de path diferente), de novo irrelevante pro app porque sempre baixa
+  do `home`.
+- Os outros 14 jogos (Red/Blue/Yellow, Gold/Silver/Crystal, Ruby/Sapphire/Emerald,
+  FireRed/LeafGreen, Diamond/Pearl, Platinum, Black/White, Black 2/White 2,
+  Omega Ruby/Alpha Sapphire, Sun/Moon, Ultra Sun/Ultra Moon, Let's Go Pikachu/Eevee,
+  Brilliant Diamond/Shining Pearl, Legends: Arceus): todos em `pokemondb.net/pokedex/game/<slug>`
+  (slug de cada um no arquivo `.html`/`.js` correspondente), a maioria uma Pokédex só sem seção
+  nem DLC. Duas exceções:
+  - **Sun/Moon e Ultra Sun/Ultra Moon** têm 5 seções na página (`Alola dex` + 4 ilhas). Usei só a
+    `Alola dex` (302 e 403 entradas) — é a Pokédex regional única de verdade, com os lendários e
+    Ultra Beasts incluídos; as 4 ilhas são só uma visão "onde encontrar" que não bate exatamente
+    com ela (tem Pokémon repetido entre ilhas e falta lendário/UB), não são Pokédex separadas de
+    fato como as 3 seções de X & Y.
+  - **Legends: Arceus** tem 16 formas hisuianas escondidas atrás do slug base (mesma pegadinha do
+    Sword & Shield, ver abaixo).
+Pra uma Pokédex de um jogo ainda mais novo, o caminho é o mesmo: achar a página no pokemondb,
+extrair número regional + slug + tipos na ordem que aparece, conferir que o slug já existe no
+catálogo (senão precisa adicionar o Pokémon primeiro), **deduplicar contra as Pokédex já
 cadastradas se a fonte não vier filtrada**, e inserir em `pokedex` + `pokedex_entrada`.
 
 **Pegadinha ao extrair da página do pokemondb**: quando o Pokémon mostrado na lista é uma forma
@@ -207,20 +268,24 @@ base de Sword/Shield + da DLC Isle of Armor).
   sidebar, num bloco `.sidebar-dex` logo abaixo do menu de páginas. O `#main` ao lado só tem as
   caixas. Os ids (`#sub`, `#done`, `#total`, `#prog`, `#q`, `#onlyMissing`, `#subs`, `#nav`) não
   mudaram, só a posição no HTML — o `livingdex.js` não sabe nem precisa saber onde eles estão.
-- Padrão pra cadastrar uma living dex nova (ex.: Johto): 1) inserir a(s) Pokédex no banco (anotar
-  os ids que o SQLite atribuiu); 2) criar `johto.html` copiando o padrão de `legends-za.html`
-  (sidebar completa + `.sidebar-dex` + `#main` + `<dialog id="modal">`, carregando `comum.js` →
-  `livingdex.js` → `johto.js`) e um `johto.js` de uma linha só, tipo
-  `iniciarLivingDex([ids da Johto]).catch(...)`; 3) adicionar o item no `<nav>` da sidebar **em
-  todo HTML existente** (a sidebar é duplicada em cada página, de propósito, pra não precisar de
-  template no servidor); 4) adicionar a entrada em `LIVING_DEXES` no `home.js`.
+- Padrão pra cadastrar uma living dex nova (ex.: um jogo que sair no futuro): 1) escolher o
+  próximo `living_dex_id` livre e inserir a(s) Pokédex no banco com ele; 2) criar `<jogo>.html`
+  copiando o padrão de qualquer página existente (sidebar completa + `.sidebar-dex` + `#main` +
+  `<dialog id="modal">`, carregando `comum.js` → `livingdex.js` → `<jogo>.js`) e um `<jogo>.js` de
+  uma linha só, tipo `iniciarLivingDex(<living_dex_id>, [ids das Pokédex]).catch(...)`;
+  3) adicionar o item no `<nav>` da sidebar **em todo HTML existente** (a sidebar é duplicada em
+  cada página, de propósito, pra não precisar de template no servidor — com 19 páginas isso já foi
+  feito por script em vez de editar arquivo por arquivo, ver commit correspondente); 4) adicionar
+  a entrada em `LIVING_DEXES` no `home.js`; 5) se o `nome` da Pokédex colidir com uma já
+  cadastrada (região repetida), desambiguar como `"Região (abreviação do jogo)"` (ver seção Banco).
 
 ## Pontos em aberto
 
 - Importar o progresso da versão antiga (um HTML único que salvava no `localStorage` por nome do
   Pokémon, não por slug).
-- Cadastrar novas Pokédex (Johto, Kanto, Hisui…) — falta decidir a fonte da ordem regional. Cada
-  uma vira um HTML novo, seguindo o padrão descrito acima.
+- Praticamente toda a série principal já está cadastrada (19 living dex). O que ainda não entrou:
+  jogos muito novos que saírem depois desta lista, e spin-offs sem sistema de caixas de PC de
+  verdade (Pokémon GO, Colosseum/XD) — esses não fazem muito sentido como "living dex" tradicional.
 - Ajustes de layout no modal.
 - As 44 Megas novas da Legends: Z-A estão com sprite de qualidade inferior (ícone de menu do jogo,
   via Bulbapedia) porque a Pokémon HOME ainda não tem a arte delas. Quando a HOME atualizar (ou o
