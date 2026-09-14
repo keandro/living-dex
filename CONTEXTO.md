@@ -338,6 +338,21 @@ base de Sword/Shield + da DLC Isle of Armor).
   sem precisar calcular `../`. `servidor.py` não precisou de nenhuma mudança pra isso — o
   `SimpleHTTPRequestHandler` já serve qualquer subpasta automaticamente.
 
+- **Painel de efetividade de tipo (slide-down) nos chips do topo do modal.** Clicar num chip de
+  tipo em `.det .tipos` (só os do cabeçalho do modal — não os das células da grade, da cadeia
+  evolutiva nem das "outras formas"/Mega/Gigantamax, que são pequenos demais pra um painel fazer
+  sentido ali) abre embaixo dele um painel com duas colunas, "Ataque" e "Defesa", cada uma com uma
+  linha de "forte contra"/"recebe pouco dano de" (✓, cor `--done`) e outra de "fraco contra"/"recebe
+  dano dobrado de" (✗, vermelho), listando os tipos como chips coloridos — no molde da referência do
+  pokemondb.net (seção "Attack/Defense pros & cons"), mas com os rótulos traduzidos. Clicar de novo
+  no mesmo tipo fecha; clicar num tipo diferente troca o conteúdo mantendo aberto. Tudo calculado
+  em `tipoInfoHtml(tipo)` (`livingdex.js`) direto da constante `CHART` já existente (não precisou
+  de dado novo no banco nem na API). A animação é `max-height`/`opacity` com `transition` (não dá
+  pra animar `height:auto` direto em CSS), e o painel usa `flex:1 1 100%` dentro do `.topo` (que
+  virou `flex-wrap:wrap`) pra cair numa linha própria abaixo dos chips sem quebrar o layout deles;
+  `order:2` no `.tipo-info` garante que ele sempre fica depois dos elementos seguintes do `.topo`
+  (como o botão de capturado) na ordem visual, não só na ordem do DOM.
+
 ## Pontos em aberto
 
 - Importar o progresso da versão antiga (um HTML único que salvava no `localStorage` por nome do

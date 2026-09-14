@@ -59,7 +59,7 @@ const el = (tag, cls, html) => {
   if (html != null) n.innerHTML = html;
   return n;
 };
-const chip = t => `<i style="background:${TIPO[t][1]}">${TIPO[t][0]}</i>`;
+const chip = t => `<i data-tipo="${t}" style="background:${TIPO[t][1]}">${TIPO[t][0]}</i>`;
 const badgeEspecial = p => p.mitico ? `<span class="especial mitico">Mítico</span>`
   : p.lendario ? `<span class="especial lendario">Lendário</span>` : "";
 
@@ -257,7 +257,25 @@ function topo(p) {
     `<div><div class="num">Nº ${String(p.num_nacional).padStart(4, "0")}</div>` +
     `<h3>${p.nome}${badgeEspecial(p)}</h3>` +
     (p.forma ? `<div class="forma">Forma ${p.forma}</div>` : "") +
-    `<div class="tipos">${p.tipos.map(chip).join("")}</div></div>`;
+    `<div class="tipos">${p.tipos.map(chip).join("")}</div></div>` +
+    `<div class="tipo-info"></div>`;
+
+  const painel = t.querySelector(".tipo-info");
+  t.querySelectorAll(".tipos i").forEach(chipEl => {
+    chipEl.addEventListener("click", () => {
+      const tipoClicado = chipEl.dataset.tipo;
+      const jaAberto = painel.classList.contains("aberto") && painel.dataset.tipo === tipoClicado;
+      t.querySelectorAll(".tipos i").forEach(c => c.classList.toggle("ativo", !jaAberto && c === chipEl));
+      if (jaAberto) {
+        painel.classList.remove("aberto");
+        painel.dataset.tipo = "";
+        return;
+      }
+      painel.innerHTML = tipoInfoHtml(tipoClicado);
+      painel.dataset.tipo = tipoClicado;
+      painel.classList.add("aberto");
+    });
+  });
 
   const acoes = el("div", "acoes");
   const x = el("button", "fechar", "✕");
@@ -395,6 +413,31 @@ function defesasHtml(tipos) {
     return `<div class="${cls}"><b style="background:${TIPO[atk][1]}">${TIPO[atk][0].slice(0, 3)}</b>` +
            `<span>${rot || "&nbsp;"}</span></div>`;
   }).join("") + `</div>`;
+}
+
+/* Painel de referência de um tipo (ataque e defesa), aberto ao clicar num chip de tipo no modal. */
+function tipoInfoHtml(tipo) {
+  const nome = TIPO[tipo][0];
+  const atacaForte = ORDEM_TIPOS.filter(t => (CHART[tipo][t] ?? 1) === 2);
+  const atacaFraco = ORDEM_TIPOS.filter(t => (CHART[tipo][t] ?? 1) < 1);
+  const defendeBem = ORDEM_TIPOS.filter(atk => (CHART[atk][tipo] ?? 1) < 1);
+  const defendeMal = ORDEM_TIPOS.filter(atk => (CHART[atk][tipo] ?? 1) === 2);
+
+  const linha = (sim, rotulo, lista) => `
+    <div class="ti-linha"><span class="ti-marca ${sim ? "sim" : "nao"}">${sim ? "✓" : "✕"}</span>${rotulo}</div>
+    <div class="ti-lista">${lista.length ? lista.map(chip).join("") : '<span class="oculta">Nenhum</span>'}</div>`;
+
+  return `
+    <div class="ti-coluna">
+      <h4>Ataque</h4>
+      ${linha(true, `Movimentos de ${nome} são superefetivos contra:`, atacaForte)}
+      ${linha(false, `Movimentos de ${nome} são pouco efetivos contra:`, atacaFraco)}
+    </div>
+    <div class="ti-coluna">
+      <h4>Defesa</h4>
+      ${linha(true, `Pokémon do tipo ${nome} recebem pouco dano de:`, defendeBem)}
+      ${linha(false, `Pokémon do tipo ${nome} recebem dano dobrado de:`, defendeMal)}
+    </div>`;
 }
 
 function cadeiaHtml(no, atual) {

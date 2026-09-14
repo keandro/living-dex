@@ -133,7 +133,7 @@ dialog{
 }
 dialog::backdrop{background:var(--backdrop)}
 .det{padding:0 0 20px}
-.det .topo{display:flex; gap:18px; align-items:center; padding:18px 22px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--panel); border-radius:16px 16px 0 0; z-index:2}
+.det .topo{display:flex; flex-wrap:wrap; gap:18px; align-items:center; padding:18px 22px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--panel); border-radius:16px 16px 0 0; z-index:2}
 .det .topo .sprites{display:flex; align-items:flex-start; gap:14px; flex:0 0 auto}
 .det .topo .sprites img{object-fit:contain}
 .det .topo .sprites .normal, .det .topo .sprites .shiny img{width:128px; height:128px}
@@ -146,7 +146,20 @@ dialog::backdrop{background:var(--backdrop)}
 .det .num{font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums}
 .det .forma{font-size:12.5px; color:var(--muted)}
 .det .tipos{display:flex; gap:5px; margin-top:6px}
-.det .tipos i{font-size:10.5px; padding:2px 9px}
+.det .tipos i{font-size:10.5px; padding:2px 9px; cursor:pointer; transition:filter .15s, box-shadow .15s}
+.det .tipos i:hover{filter:brightness(1.12)}
+.det .tipos i.ativo{box-shadow:0 0 0 2px var(--panel), 0 0 0 4px currentColor}
+
+.tipo-info{order:2; flex:1 1 100%; display:flex; flex-wrap:wrap; gap:0 28px; max-height:0; opacity:0; overflow:hidden; transition:max-height .25s ease, opacity .2s ease}
+.tipo-info.aberto{max-height:700px; opacity:1; padding-top:14px}
+.ti-coluna{flex:1 1 220px; min-width:0}
+.ti-coluna h4{margin:0 0 8px; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--muted)}
+.ti-linha{display:flex; align-items:center; gap:8px; font-size:13px; margin:12px 0 6px}
+.ti-marca{flex:0 0 auto; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; color:#fff}
+.ti-marca.sim{background:var(--done)}
+.ti-marca.nao{background:#a33c37}
+.ti-lista{display:flex; flex-wrap:wrap; gap:5px; margin:0 0 10px}
+.ti-lista i{font-size:10.5px; padding:2px 9px}
 .det .acoes{margin-left:auto; display:flex; flex-direction:column; gap:8px; align-items:flex-end}
 .marcar{font-size:14px; padding:9px 16px; border-radius:var(--radius); border:1px solid var(--done); background:var(--panel); color:var(--done); font-weight:500}
 .marcar:hover{background:var(--tinted)}
