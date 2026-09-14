@@ -23,24 +23,41 @@ uma lista ordenada de referências.
 
 ## Arquivos
 
+A pasta era só um monte de arquivo solto (mais de 60 na raiz) até ficar difícil de achar coisa —
+agora tá organizada em pastas:
+
 ```
 pokedex.db          banco SQLite (1085 Pokémon, ~900 KB)
 servidor.py         servidor + API, só biblioteca padrão (http.server + sqlite3)
-estilo.css          CSS compartilhado por todas as páginas (variáveis, sidebar, caixas, modal)
-tema-preload.js     aplica o tema salvo antes da 1ª pintura, pra não dar flash — sem defer/async
-comum.js            compartilhado: api() e o botão de tema (todas as páginas carregam)
-livingdex.js        compartilhado: TIPO/CHART, montagem das caixas e o modal de detalhe —
-                    exporta iniciarLivingDex(livingDexId, idsPokedex) pras living dex e
-                    iniciarCatalogo() pra Pokédex Nacional (ver seção abaixo)
-index.html + home.js   página inicial: lista as living dex + o card de consulta
-nacional.html + nacional.js   Pokédex Nacional: catálogo inteiro, sem captura nem caixas
-baixar_sprites.py   baixa os sprites (normal + shiny) do pokemondb para sprites/, para uso offline
-sprites/            sprites locais: sprites/normal/<slug>.jpg e sprites/shiny/<slug>.jpg
-fonts/jost.woff2    fonte Jost (variável, pesos 300–600) baixada do Google Fonts, servida local
+baixar_sprites.py   baixa os sprites (normal + shiny) do pokemondb para static/sprites/
+index.html + nacional.html + nacional.js   as duas páginas que ficam na raiz (ver por quê abaixo)
+
+static/              tudo que é compartilhado — CSS, JS comum, fonte, sprites
+  estilo.css          CSS de todas as páginas (variáveis, sidebar, caixas, modal)
+  tema-preload.js      aplica o tema salvo antes da 1ª pintura, sem defer/async
+  comum.js             api() e o botão de tema
+  livingdex.js          TIPO/CHART, montagem das caixas e o modal — exporta
+                        iniciarLivingDex(livingDexId, idsPokedex) e iniciarCatalogo()
+  home.js               monta os cards da página inicial
+  fonts/jost.woff2      fonte Jost (variável, pesos 300–600)
+  sprites/normal|shiny/<slug>.jpg
+
+living-dex/           um par <jogo>.html + <jogo>.js por living dex (ver lista abaixo)
 ```
 
-Cada living dex é um par `<jogo>.html` + `<jogo>.js`, todos seguindo o mesmo molde (ver
-"Decisões já tomadas"). As 19 atuais, em ordem de criação:
+**`index.html` fica na raiz por exigência do próprio `http.server`**: `GET /` só serve
+`index.html` automaticamente se ele estiver na pasta raiz servida, então não dava pra mover pra
+dentro de uma subpasta. Deixei `nacional.html`/`nacional.js` do lado dele na raiz por serem as
+duas páginas "de entrada" (não são uma living dex específica), pra ficar claro que são de
+natureza diferente das 19 dentro de `living-dex/`.
+
+Todo caminho pra `static/` no HTML e no `sprite()`/`spriteShiny()` do `livingdex.js` é
+**absoluto** (`/static/...`), não relativo — assim funciona igual não importa se a página que
+carrega é `index.html` (raiz) ou `living-dex/paldea.html` (uma pasta a mais de profundidade), sem
+precisar calcular `../` em cada lugar.
+
+Cada living dex é um par `<jogo>.html` + `<jogo>.js` dentro de `living-dex/`, todos seguindo o
+mesmo molde (ver "Decisões já tomadas"). As 19 atuais, em ordem de criação:
 
 ```
 paldea.html                        Scarlet & Violet     livingDexId 1
@@ -64,8 +81,8 @@ brilliant-diamond-shining-pearl.html  Brilliant Diamond & Shining Pearl  livingD
 legends-arceus.html                Legends: Arceus      livingDexId 19
 ```
 
-Só `dex.js` (Paldea) foge do padrão `<nome-do-arquivo>.js` porque foi criado antes de virar
-convenção — funciona igual, só o nome que destoa.
+`paldea.js` já se chamou `dex.js` (era o primeiro, criado antes de virar convenção o nome bater
+com o `.html`) — renomeado durante essa reorganização, não tem mais exceção ao padrão.
 
 Rodar: `python servidor.py` e abrir `http://localhost:8000`.
 Porta alternativa: `$env:PORTA=9000; python servidor.py`. Escuta em `0.0.0.0`, então dá para abrir
@@ -142,12 +159,13 @@ capturado nem entram nas caixas — são só informação extra mostrada no moda
   CSVs, esse ponto tem que ser revisado nome a nome de novo.
 - As **defesas de tipo não estão no banco** — são calculadas no `livingdex.js` a partir da constante
   `CHART` (tipo atacante → efetividade).
-- Os sprites são locais, em `sprites/normal/<slug>.jpg` e `sprites/shiny/<slug>.jpg`, baixados do
-  pokemondb (conjunto `home`, ícones do Pokémon HOME) pelo `baixar_sprites.py`. O `livingdex.js`
-  (`sprite()`/`spriteShiny()`) só aponta pro caminho local, servido pelo próprio `servidor.py`
-  — não depende mais de internet depois de baixado. Rodar `baixar_sprites.py` de novo pula o que
-  já existe, então serve pra baixar só o que faltar (Pokémon novo, forma nova). O conjunto
-  `scarlet-violet` do pokemondb só tem sprite normal, sem shiny, por isso não foi usado.
+- Os sprites são locais, em `static/sprites/normal/<slug>.jpg` e `static/sprites/shiny/<slug>.jpg`,
+  baixados do pokemondb (conjunto `home`, ícones do Pokémon HOME) pelo `baixar_sprites.py`. O
+  `livingdex.js` (`sprite()`/`spriteShiny()`) aponta pro caminho absoluto `/static/sprites/...`,
+  servido pelo próprio `servidor.py` — não depende mais de internet depois de baixado. Rodar
+  `baixar_sprites.py` de novo pula o que já existe, então serve pra baixar só o que faltar
+  (Pokémon novo, forma nova). O conjunto `scarlet-violet` do pokemondb só tem sprite normal, sem
+  shiny, por isso não foi usado.
 - **Mega Evolução / Gigantamax não são Pokémon separados** — não têm slug próprio, não entram em
   `pokedex_entrada` nem em captura, é só informação a mais no modal (seção "Mega Evolução" e
   "Gigantamax", do lado de "Outras formas"). Cada linha de `pokemon_forma_especial` guarda o
@@ -269,13 +287,14 @@ base de Sword/Shield + da DLC Isle of Armor).
 - O catálogo tem todas as espécies, não só as das Pokédex atuais, justamente para que adicionar uma
   Pokédex nova seja só inserir em `pokedex_entrada`.
 - O front tem um **menu lateral fixo** (sempre à esquerda, inclusive no celular — não vira barra
-  no topo) e cada living dex é um **HTML separado** (`index.html` = início, `paldea.html` = Paldea,
-  `legends-za.html` = Legends: Z-A), não uma SPA com rotas em hash. Isso foi escolha deliberada pra
-  facilitar adicionar living dex novas depois: cada uma ganha seu próprio arquivo, sem mexer nas
-  outras. `estilo.css`, `tema-preload.js`, `comum.js` (api + tema) e `livingdex.js` (`TIPO`, `CHART`,
-  montagem das caixas, modal de detalhe) são compartilhados por todas as páginas de living dex — só
-  a lista de quais Pokédex mostrar é específica de cada página, e isso vira uma chamada de uma
-  linha: `iniciarLivingDex([1, 2, 3])` no `dex.js` do Paldea, `iniciarLivingDex([4, 5])` no
+  no topo) e cada living dex é um **HTML separado** dentro de `living-dex/` (`index.html` na raiz
+  = início, `living-dex/paldea.html` = Paldea, `living-dex/legends-za.html` = Legends: Z-A), não
+  uma SPA com rotas em hash. Isso foi escolha deliberada pra facilitar adicionar living dex novas
+  depois: cada uma ganha seu próprio arquivo, sem mexer nas outras. `static/estilo.css`,
+  `static/tema-preload.js`, `static/comum.js` (api + tema) e `static/livingdex.js` (`TIPO`,
+  `CHART`, montagem das caixas, modal de detalhe) são compartilhados por todas — só a lista de
+  quais Pokédex mostrar é específica de cada página, e isso vira uma chamada de uma linha:
+  `iniciarLivingDex(1, [1, 2, 3])` no `paldea.js`, `iniciarLivingDex(2, [4, 5])` no
   `legends-za.js`. Sem essa filtragem por id, toda página mostraria as Pokédex de todo mundo.
 - **Não existe `<header>` no topo.** Toda a área de controle de uma living dex (progresso, busca,
   filtro "só faltando", progresso por Pokédex e a navegação entre caixas) fica dentro da própria
@@ -283,15 +302,26 @@ base de Sword/Shield + da DLC Isle of Armor).
   caixas. Os ids (`#sub`, `#done`, `#total`, `#prog`, `#q`, `#onlyMissing`, `#subs`, `#nav`) não
   mudaram, só a posição no HTML — o `livingdex.js` não sabe nem precisa saber onde eles estão.
 - Padrão pra cadastrar uma living dex nova (ex.: um jogo que sair no futuro): 1) escolher o
-  próximo `living_dex_id` livre e inserir a(s) Pokédex no banco com ele; 2) criar `<jogo>.html`
-  copiando o padrão de qualquer página existente (sidebar completa + `.sidebar-dex` + `#main` +
-  `<dialog id="modal">`, carregando `comum.js` → `livingdex.js` → `<jogo>.js`) e um `<jogo>.js` de
-  uma linha só, tipo `iniciarLivingDex(<living_dex_id>, [ids das Pokédex]).catch(...)`;
-  3) adicionar o item no `<nav>` da sidebar **em todo HTML existente** (a sidebar é duplicada em
-  cada página, de propósito, pra não precisar de template no servidor — com 19 páginas isso já foi
-  feito por script em vez de editar arquivo por arquivo, ver commit correspondente); 4) adicionar
-  a entrada em `LIVING_DEXES` no `home.js`; 5) se o `nome` da Pokédex colidir com uma já
-  cadastrada (região repetida), desambiguar como `"Região (abreviação do jogo)"` (ver seção Banco).
+  próximo `living_dex_id` livre e inserir a(s) Pokédex no banco com ele; 2) criar
+  `living-dex/<jogo>.html` copiando o padrão de qualquer página existente ali dentro (sidebar
+  completa + `.sidebar-dex` + `#main` + `<dialog id="modal">`, carregando `../static/comum.js` →
+  `../static/livingdex.js` → `<jogo>.js`, com os links da sidebar pra `../index.html` e
+  `../nacional.html`) e um `living-dex/<jogo>.js` de uma linha só, tipo
+  `iniciarLivingDex(<living_dex_id>, [ids das Pokédex]).catch(...)`; 3) adicionar o item no `<nav>`
+  da sidebar **em todo HTML existente** (a sidebar é duplicada em cada página, de propósito, pra
+  não precisar de template no servidor — com 21 páginas isso já foi feito por script em vez de
+  editar arquivo por arquivo, ver commits correspondentes); 4) adicionar a entrada em
+  `LIVING_DEXES` no `static/home.js`, com `pagina: "living-dex/<jogo>.html"`; 5) se o `nome` da
+  Pokédex colidir com uma já cadastrada (região repetida), desambiguar como
+  `"Região (abreviação do jogo)"` (ver seção Banco).
+- **Reorganização em pastas** (`static/` + `living-dex/`, `index.html`/`nacional.html`/
+  `nacional.js` na raiz): feita quando a raiz já tinha mais de 60 arquivos soltos e ficou difícil
+  de identificar coisa. `index.html` tem que ficar na raiz porque é o único jeito do
+  `http.server` servir `GET /` sem listar diretório. Toda referência a `static/` (CSS, JS
+  compartilhado, fonte, sprite) é **caminho absoluto** (`/static/...`), não relativo — assim as
+  páginas da raiz e as de `living-dex/` (uma pasta a mais de profundidade) usam a mesma referência
+  sem precisar calcular `../`. `servidor.py` não precisou de nenhuma mudança pra isso — o
+  `SimpleHTTPRequestHandler` já serve qualquer subpasta automaticamente.
 
 ## Pontos em aberto
 

@@ -51,8 +51,8 @@ const STATS = [
 ];
 
 const titulo = s => s.split("-").map(p => p[0].toUpperCase() + p.slice(1)).join(" ");
-const sprite = s => `sprites/normal/${s}.jpg`;
-const spriteShiny = s => `sprites/shiny/${s}.jpg`;
+const sprite = s => `/static/sprites/normal/${s}.jpg`;
+const spriteShiny = s => `/static/sprites/shiny/${s}.jpg`;
 const el = (tag, cls, html) => {
   const n = document.createElement(tag);
   if (cls) n.className = cls;
@@ -414,7 +414,7 @@ function formaHtml(f) {
 function especialHtml(e, p) {
   const tipos = e.tipo1 ? [e.tipo1, e.tipo2].filter(Boolean) : p.tipos;
   const b = el("div", "no especial");
-  b.innerHTML = `<img src="sprites/normal/${e.sprite}" alt="">` +
+  b.innerHTML = `<img src="/static/sprites/normal/${e.sprite}" alt="">` +
     `<span class="n">${e.nome}</span>` +
     `<span class="ty" style="display:flex;gap:3px;justify-content:center">` +
     tipos.map(chip).join("") + `</span>`;

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Baixa os sprites (normal e shiny) de todos os Pokemon do banco para a pasta
-sprites/, para o app funcionar offline. Sem dependencias externas.
+"""Baixa os sprites (normal e shiny) de todos os Pokemon do banco para
+static/sprites/, para o app funcionar offline. Sem dependencias externas.
 
 Roda de novo quando quiser (por exemplo depois de adicionar Pokemon novos):
 pula o que ja foi baixado.
@@ -16,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 BANCO = os.path.join(RAIZ, "pokedex.db")
-PASTA = os.path.join(RAIZ, "sprites")
+PASTA = os.path.join(RAIZ, "static", "sprites")
 CONJUNTOS = {
     "normal": "https://img.pokemondb.net/sprites/home/normal/2x/{}.jpg",
     "shiny": "https://img.pokemondb.net/sprites/home/shiny/2x/{}.jpg",
