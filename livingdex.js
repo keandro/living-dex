@@ -1,6 +1,9 @@
-/* Living Dex — logica compartilhada por toda pagina de living dex (caixas + modal de detalhe).
-   Cada pagina so chama iniciarLivingDex(livingDexId, [ids das Pokedex que ela mostra]) no fim do
-   seu proprio arquivo .js. Depende de comum.js (api, tema). */
+/* Living Dex — logica compartilhada por toda pagina de living dex e pela Pokedex Nacional
+   (caixas ou grade unica + modal de detalhe). Cada pagina de living dex so chama
+   iniciarLivingDex(livingDexId, [ids das Pokedex que ela mostra]) no fim do seu proprio .js;
+   a Pokedex Nacional chama iniciarCatalogo() (sem captura, sem caixas). Depende de comum.js
+   (api, tema). Quando estado.livingDexId e' null estamos na consulta avulsa: sem botao de
+   marcar, sem contador/progresso, sem "so faltando". */
 
 const TIPO = {
   normal:   ["Normal",   "#9299a4"], fire:     ["Fire",     "#e2603a"],
@@ -115,15 +118,34 @@ async function iniciarLivingDex(livingDexId, idsPokedex) {
   pintar();
 }
 
+/* Pagina de consulta (Pokedex Nacional): lista o catalogo inteiro, sem caixas nem captura. */
+async function iniciarCatalogo() {
+  estado.livingDexId = null;
+  const lista = await api("/catalogo");
+  estado.total = lista.length;
+
+  document.getElementById("sub").textContent = `${estado.total} Pokémon, em ordem da Pokédex Nacional`;
+
+  const main = document.getElementById("main");
+  main.innerHTML = "";
+  const box = el("section", "box");
+  const grid = el("div", "grid");
+  lista.forEach(e => grid.appendChild(celula(e)));
+  box.appendChild(grid);
+  main.appendChild(box);
+}
+
 function celula(e) {
-  const b = el("div", "cell");
+  const b = el("div", estado.livingDexId != null ? "cell" : "cell sem-captura");
   b.tabIndex = 0;
   b.setAttribute("role", "button");
   b.dataset.slug = e.slug;
   b.dataset.busca = (e.nome + " " + (e.forma || "") + " " + e.slug).toLowerCase();
   const tipos = (e.tipos || "").split("/").filter(Boolean).map(chip).join("");
+  const marca = estado.livingDexId != null
+    ? `<button class="mark" type="button" aria-label="Marcar/desmarcar capturado"></button>` : "";
   b.innerHTML =
-    `<button class="mark" type="button" aria-label="Marcar/desmarcar capturado"></button>` +
+    marca +
     `<span class="idx">${String(e.num_regional).padStart(3, "0")}</span>` +
     `<img loading="lazy" alt="" src="${sprite(e.sprite)}">` +
     `<span class="nm">${e.nome}</span>` +
@@ -133,10 +155,12 @@ function celula(e) {
   b.addEventListener("keydown", ev => {
     if (ev.target === b && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); abrir(e.slug); }
   });
-  b.querySelector(".mark").addEventListener("click", ev => {
-    ev.stopPropagation();
-    alternarCaptura(e.slug);
-  });
+  if (estado.livingDexId != null) {
+    b.querySelector(".mark").addEventListener("click", ev => {
+      ev.stopPropagation();
+      alternarCaptura(e.slug);
+    });
+  }
   return b;
 }
 
@@ -173,7 +197,8 @@ function pintar() {
 
 function filtrar() {
   const q = document.getElementById("q").value.trim().toLowerCase();
-  const so = document.getElementById("onlyMissing").getAttribute("aria-pressed") === "true";
+  const btnSo = document.getElementById("onlyMissing");
+  const so = btnSo && btnSo.getAttribute("aria-pressed") === "true";
   document.querySelectorAll(".cell").forEach(c => {
     const okQ = !q || c.dataset.busca.includes(q);
     const okM = !so || !estado.capturados.has(c.dataset.slug);
@@ -189,7 +214,8 @@ async function abrir(slug) {
   const det = document.getElementById("det");
   det.innerHTML = `<div class="topo"><span>Carregando…</span></div>`;
   if (!modal.open) modal.showModal();
-  const p = await api(`/pokemon/${estado.livingDexId}/${slug}`);
+  const p = await api(estado.livingDexId != null
+    ? `/pokemon/${estado.livingDexId}/${slug}` : `/pokemon/${slug}`);
   det.innerHTML = "";
   det.appendChild(topo(p));
   det.appendChild(secoes(p));
@@ -211,20 +237,23 @@ function topo(p) {
   const x = el("button", "fechar", "✕");
   x.title = "Fechar";
   x.addEventListener("click", () => document.getElementById("modal").close());
-  const b = el("button", "marcar");
-  const marcado = estado.capturados.has(p.slug);
-  b.dataset.on = marcado ? "1" : "0";
-  b.textContent = marcado ? "✓ Capturado" : "Marcar como capturado";
-  b.addEventListener("click", async () => {
-    b.disabled = true;
-    try {
-      await alternarCaptura(p.slug);
-      const agora = estado.capturados.has(p.slug);
-      b.dataset.on = agora ? "1" : "0";
-      b.textContent = agora ? "✓ Capturado" : "Marcar como capturado";
-    } finally { b.disabled = false; }
-  });
-  acoes.append(x, b);
+  acoes.append(x);
+  if (estado.livingDexId != null) {
+    const b = el("button", "marcar");
+    const marcado = estado.capturados.has(p.slug);
+    b.dataset.on = marcado ? "1" : "0";
+    b.textContent = marcado ? "✓ Capturado" : "Marcar como capturado";
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      try {
+        await alternarCaptura(p.slug);
+        const agora = estado.capturados.has(p.slug);
+        b.dataset.on = agora ? "1" : "0";
+        b.textContent = agora ? "✓ Capturado" : "Marcar como capturado";
+      } finally { b.disabled = false; }
+    });
+    acoes.append(b);
+  }
   t.appendChild(acoes);
   return t;
 }
@@ -393,8 +422,10 @@ function especialHtml(e, p) {
 }
 
 /* ---------------------------------------------------------------- eventos */
-document.getElementById("q").addEventListener("input", filtrar);
-document.getElementById("onlyMissing").addEventListener("click", e => {
+const campoQ = document.getElementById("q");
+if (campoQ) campoQ.addEventListener("input", filtrar);
+const btnOnlyMissing = document.getElementById("onlyMissing");
+if (btnOnlyMissing) btnOnlyMissing.addEventListener("click", e => {
   const b = e.currentTarget;
   b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") === "true" ? "false" : "true");
   filtrar();

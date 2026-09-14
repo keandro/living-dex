@@ -30,8 +30,10 @@ estilo.css          CSS compartilhado por todas as páginas (variáveis, sidebar
 tema-preload.js     aplica o tema salvo antes da 1ª pintura, pra não dar flash — sem defer/async
 comum.js            compartilhado: api() e o botão de tema (todas as páginas carregam)
 livingdex.js        compartilhado: TIPO/CHART, montagem das caixas e o modal de detalhe —
-                    exporta iniciarLivingDex(livingDexId, idsPokedex), quem chama é o JS de cada página
-index.html + home.js   página inicial: lista as living dex com o progresso de cada uma
+                    exporta iniciarLivingDex(livingDexId, idsPokedex) pras living dex e
+                    iniciarCatalogo() pra Pokédex Nacional (ver seção abaixo)
+index.html + home.js   página inicial: lista as living dex + o card de consulta
+nacional.html + nacional.js   Pokédex Nacional: catálogo inteiro, sem captura nem caixas
 baixar_sprites.py   baixa os sprites (normal + shiny) do pokemondb para sprites/, para uso offline
 sprites/            sprites locais: sprites/normal/<slug>.jpg e sprites/shiny/<slug>.jpg
 fonts/jost.woff2    fonte Jost (variável, pesos 300–600) baixada do Google Fonts, servida local
@@ -163,6 +165,8 @@ capturado nem entram nas caixas — são só informação extra mostrada no moda
 | `GET /api/pokedex` | Pokédex cadastradas com total e quantos capturados (já scoped por living dex) |
 | `GET /api/pokedex/<id>` | entradas da Pokédex: número regional, slug, nome, forma, tipos, capturado |
 | `GET /api/pokemon/<living_dex_id>/<slug>` | registro completo + cadeia evolutiva + em quais Pokédex aparece; `capturado` é só dessa living dex |
+| `GET /api/pokemon/<slug>` | mesma coisa, sem living dex — usado pela Pokédex Nacional, `capturado` sempre `false` |
+| `GET /api/catalogo` | catálogo inteiro (1085) em ordem de Pokédex Nacional — usado só pela página de consulta |
 | `GET /api/busca/<termo>` | busca no catálogo inteiro, inclusive quem não está em Pokédex nenhuma |
 | `POST /api/captura/<living_dex_id>/<slug>` | marca como capturado nessa living dex |
 | `DELETE /api/captura/<living_dex_id>/<slug>` | desmarca nessa living dex |
@@ -252,6 +256,16 @@ base de Sword/Shield + da DLC Isle of Armor).
   servidor já sabe o `living_dex_id` de cada Pokédex pelo banco. Ao cadastrar uma living dex nova,
   não esquecer de dar um `living_dex_id` novo pras Pokédex dela e usar esse número no
   `iniciarLivingDex()` da página.
+- **A Pokédex Nacional (`nacional.html`) não é uma living dex** — é só consulta ao catálogo
+  inteiro (1085, incluindo formas regionais), em ordem nacional, sem caixa de 30 e sem marcar
+  captura. Ela usa o mesmo `livingdex.js` (reaproveita `celula()`, o modal, tudo), só que chama
+  `iniciarCatalogo()` em vez de `iniciarLivingDex()`, o que deixa `estado.livingDexId = null`. Todo
+  lugar do `livingdex.js` que depende de captura confere `estado.livingDexId != null` antes de
+  mexer (o botão "Marcar como capturado" no modal, o botãozinho `.mark` de cada célula, o `.mark`
+  não aparece na Pokédex Nacional). O `servidor.py` trata isso com `detalhe(slug, living_dex_id=None)`
+  — sem `living_dex_id`, `capturado` sempre volta `false` e a rota vira `GET /api/pokemon/<slug>`
+  (sem o número na frente). Se cadastrar outra página desse tipo (sem captura), é só seguir esse
+  padrão: `livingDexId = null` e checagens `!= null` ao redor de tudo que mexe em captura.
 - O catálogo tem todas as espécies, não só as das Pokédex atuais, justamente para que adicionar uma
   Pokédex nova seja só inserir em `pokedex_entrada`.
 - O front tem um **menu lateral fixo** (sempre à esquerda, inclusive no celular — não vira barra

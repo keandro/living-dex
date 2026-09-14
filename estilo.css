@@ -53,6 +53,7 @@ a{color:inherit}
 /* ---------- home ---------- */
 .home{max-width:1180px; margin:0 auto; padding:40px 24px 60px}
 .home h1{font-size:26px; margin:0 0 6px}
+.home h2{font-size:16px; margin:36px 0 4px; font-weight:600}
 .home .sub{color:var(--muted); margin:0 0 28px; font-size:14.5px}
 .cards-dex{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px}
 .card-dex{display:block; text-decoration:none; color:inherit; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; transition:border-color .15s}
@@ -98,6 +99,7 @@ main{max-width:1180px; margin:0 auto; padding:20px 18px 60px}
 .cell{background:var(--panel); border:0; padding:9px 6px 10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; text-align:center; font:inherit; color:inherit; position:relative}
 .cell:hover{background:var(--surface-hover)}
 .cell img{width:74px; height:74px; object-fit:contain; filter:grayscale(1) opacity(.45); transition:filter .15s}
+.cell.sem-captura img{filter:none}
 .cell .idx{font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums}
 .cell .nm{font-size:13px; font-weight:500; line-height:1.2}
 .cell .fm{font-size:10px; color:var(--muted); line-height:1}

@@ -49,7 +49,8 @@ def entradas(pokedex_id):
         ORDER BY e.num_regional""", pokedex_id)
 
 
-def detalhe(living_dex_id, slug):
+def detalhe(slug, living_dex_id=None):
+    """living_dex_id=None e' a consulta avulsa (Pokedex Nacional): sem captura nenhuma."""
     p = linhas("SELECT * FROM pokemon WHERE slug = ?", slug)
     if not p:
         return None
@@ -62,8 +63,11 @@ def detalhe(living_dex_id, slug):
         "SELECT habilidade, oculta FROM pokemon_habilidade WHERE slug = ? ORDER BY ordem", slug)
     p["grupos_ovo"] = [r["grupo"] for r in linhas(
         "SELECT grupo FROM pokemon_grupo_ovo WHERE slug = ? ORDER BY grupo", slug)]
-    p["capturado"] = bool(linhas(
-        "SELECT 1 FROM captura WHERE slug = ? AND living_dex_id = ?", slug, living_dex_id))
+    if living_dex_id is None:
+        p["capturado"] = False
+    else:
+        p["capturado"] = bool(linhas(
+            "SELECT 1 FROM captura WHERE slug = ? AND living_dex_id = ?", slug, living_dex_id))
     p["pokedex"] = linhas("""
         SELECT d.nome, e.num_regional
         FROM pokedex_entrada e JOIN pokedex d ON d.id = e.pokedex_id
@@ -77,11 +81,24 @@ def detalhe(living_dex_id, slug):
         FROM pokemon p2
         LEFT JOIN captura c ON c.slug = p2.slug AND c.living_dex_id = ?
         WHERE p2.num_nacional = ? AND p2.slug != ?
-        ORDER BY p2.slug""", living_dex_id, p["num_nacional"], slug)
+        ORDER BY p2.slug""", living_dex_id if living_dex_id is not None else -1,
+        p["num_nacional"], slug)
     p["especiais"] = linhas("""
         SELECT tipo, nome, sprite, tipo1, tipo2
         FROM pokemon_forma_especial WHERE slug = ? ORDER BY id""", slug)
     return p
+
+
+def catalogo():
+    """So as especies base (sem forma regional) em ordem de Pokedex Nacional, pra consulta
+    sem living dex nenhuma. Formas regionais continuam acessiveis via 'Outras formas' no modal."""
+    return linhas("""
+        SELECT slug, num_nacional, num_nacional AS num_regional, nome, forma, sprite,
+               (SELECT group_concat(t.tipo, '/')
+                  FROM pokemon_tipo t WHERE t.slug = p.slug ORDER BY t.ordem) AS tipos
+        FROM pokemon p
+        WHERE forma IS NULL
+        ORDER BY num_nacional""")
 
 
 def cadeia(slug):
@@ -137,7 +154,9 @@ def marcar(living_dex_id, slug, valor):
 ROTAS = [
     (r"^/api/pokedex$",                      lambda m: listar_pokedex()),
     (r"^/api/pokedex/(\d+)$",                lambda m: entradas(int(m.group(1)))),
-    (r"^/api/pokemon/(\d+)/([\w.-]+)$",      lambda m: detalhe(int(m.group(1)), m.group(2))),
+    (r"^/api/pokemon/(\d+)/([\w.-]+)$",      lambda m: detalhe(m.group(2), int(m.group(1)))),
+    (r"^/api/pokemon/([\w.-]+)$",            lambda m: detalhe(m.group(1))),
+    (r"^/api/catalogo$",                     lambda m: catalogo()),
     (r"^/api/busca/(.+)$",                   lambda m: buscar(m.group(1))),
     (r"^/api/capturas$",                     lambda m: linhas("SELECT living_dex_id, slug FROM captura")),
 ]
