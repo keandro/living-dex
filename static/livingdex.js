@@ -156,23 +156,44 @@ function celula(e) {
     if (ev.target === b && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); abrir(e.slug); }
   });
   if (estado.livingDexId != null) {
-    b.querySelector(".mark").addEventListener("click", ev => {
+    const btnMark = b.querySelector(".mark");
+    let iniciadoPorMouse = false;
+    btnMark.addEventListener("mousedown", ev => {
+      ev.preventDefault();  // nao deixa selecionar texto nem arrastar a imagem
       ev.stopPropagation();
-      alternarCaptura(e.slug);
+      iniciadoPorMouse = true;
+      arrastandoCaptura = !estado.capturados.has(e.slug);
+      document.body.classList.add("arrastando-captura");
+      definirCaptura(e.slug, arrastandoCaptura);
+    });
+    btnMark.addEventListener("click", ev => {
+      ev.stopPropagation();
+      if (iniciadoPorMouse) { iniciadoPorMouse = false; return; }  // ja foi tratado no mousedown
+      alternarCaptura(e.slug);  // veio do teclado (Enter/Espaço)
     });
   }
   return b;
 }
 
-async function alternarCaptura(slug) {
-  const capturado = estado.capturados.has(slug);
-  try {
-    await api(`/captura/${estado.livingDexId}/${slug}`, { method: capturado ? "DELETE" : "POST" });
-    capturado ? estado.capturados.delete(slug) : estado.capturados.add(slug);
-    pintar(); filtrar();
-  } catch (err) {
-    alert("Falha ao atualizar: " + err.message);
-  }
+/* Arrastar com o mouse por cima de várias células marca (ou desmarca) todas de uma vez:
+   pressionar o .mark de uma célula decide o sentido (marcar se ela não tava, desmarcar se já
+   tava) e o mesmo sentido vale pra toda célula que o mouse passar por cima até soltar o botão. */
+let arrastandoCaptura = null;
+
+function definirCaptura(slug, valor) {
+  if (estado.capturados.has(slug) === valor) return;
+  valor ? estado.capturados.add(slug) : estado.capturados.delete(slug);
+  pintar(); filtrar();
+  api(`/captura/${estado.livingDexId}/${slug}`, { method: valor ? "POST" : "DELETE" })
+    .catch(err => {
+      valor ? estado.capturados.delete(slug) : estado.capturados.add(slug);
+      pintar(); filtrar();
+      alert("Falha ao atualizar: " + err.message);
+    });
+}
+
+function alternarCaptura(slug) {
+  definirCaptura(slug, !estado.capturados.has(slug));
 }
 
 function pintar() {
@@ -432,4 +453,15 @@ if (btnOnlyMissing) btnOnlyMissing.addEventListener("click", e => {
 });
 document.getElementById("modal").addEventListener("click", e => {
   if (e.target.id === "modal") e.target.close();   // clique fora fecha
+});
+document.addEventListener("mousemove", ev => {
+  if (arrastandoCaptura === null) return;
+  if (!(ev.buttons & 1)) { arrastandoCaptura = null; return; }  // botao foi solto fora da janela
+  const alvo = document.elementFromPoint(ev.clientX, ev.clientY);
+  const cell = alvo && alvo.closest(".cell");
+  if (cell && cell.dataset.slug) definirCaptura(cell.dataset.slug, arrastandoCaptura);
+});
+document.addEventListener("mouseup", () => {
+  arrastandoCaptura = null;
+  document.body.classList.remove("arrastando-captura");
 });

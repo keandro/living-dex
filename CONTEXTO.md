@@ -260,6 +260,21 @@ base de Sword/Shield + da DLC Isle of Armor).
 
 - Servidor em Python puro, sem dependências — nada de FastAPI/Flask/venv.
 - Clique no card **abre o modal**; marcar como capturado é um botão dentro do modal.
+- **Arrastar o mouse pelo `.mark` de várias células marca/desmarca todas de uma vez.** Pressionar
+  o `.mark` de uma célula decide o sentido (marca se ela não tava capturada, desmarca se já
+  tava) e guarda isso em `arrastandoCaptura` (variável de módulo em `livingdex.js`); enquanto o
+  botão do mouse fica pressionado, um listener de `mousemove` no `document` usa
+  `elementFromPoint()` pra achar em qual `.cell` o cursor está e aplica o mesmo sentido nela via
+  `definirCaptura(slug, valor)` — que é *idempotente* (não faz nada se a célula já tá no valor
+  certo, então passar de novo por cima não reverte). `mouseup` (ou soltar o botão fora da janela,
+  detectado no próprio `mousemove` checando `ev.buttons`) encerra o arraste.
+  `definirCaptura`/`alternarCaptura` atualizam `estado.capturados` e chamam `pintar()` **antes**
+  da chamada à API (otimista), com reversão automática se a request falhar — assim um arraste
+  rápido por várias células não fica esperando ida e volta ao servidor pra cada uma.
+  Clique isolado no `.mark` (sem arrastar) continua alternando só aquela célula — o código
+  distingue mouse de teclado com uma flag por célula (`iniciadoPorMouse`), porque o `mousedown`
+  já aplica a mudança e o `click` que vem em seguida (dá pra vir do mouse ou de Enter/Espaço via
+  teclado) só faz algo se **não** foi precedido de mousedown, senão duplicaria a troca.
 - O progresso fica no banco (tabela `captura`), não no `localStorage`. Isso faz o progresso ser o
   mesmo no PC e no celular.
 - **Captura é separada por living dex (por jogo), não global por slug.** `captura` tem chave
