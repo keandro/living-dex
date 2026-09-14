@@ -103,11 +103,15 @@ async function iniciarLivingDex(livingDexId, idsPokedex) {
       p.style.borderColor = d.cor + "55";
       nav.appendChild(p);
 
+      const numIni = String(fatia[0].num_regional).padStart(3, "0");
+      const numFim = String(fatia[fatia.length - 1].num_regional).padStart(3, "0");
+
       const box = el("section", "box");
       box.id = id;
       box.style.setProperty("--cor", d.cor);
       box.appendChild(el("h2", null,
-        `Caixa ${c + 1} de ${nCaixas} <span class="reg">${d.nome}</span>` +
+        `Caixa ${c + 1} de ${nCaixas} <span class="faixa">(${numIni} - ${numFim})</span> ` +
+        `<span class="reg">${d.nome}</span>` +
         `<span class="cnt">0/${fatia.length}</span>`));
       const grid = el("div", "grid");
       fatia.forEach(e => grid.appendChild(celula(e)));
@@ -211,6 +215,7 @@ function pintar() {
     const cels = [...box.querySelectorAll(".cell")];
     const n = cels.filter(c => estado.capturados.has(c.dataset.slug)).length;
     box.querySelector(".cnt").textContent = `${n}/${cels.length}`;
+    box.classList.toggle("completa", n === cels.length);
     const pil = document.querySelector(`.pill[data-caixa="${box.id}"] b`);
     if (pil) pil.textContent = `${n}/${cels.length}`;
   });
