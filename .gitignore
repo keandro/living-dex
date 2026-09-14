@@ -1,0 +1,13 @@
+# sprites baixados do pokemondb/Bulbapedia — regenerar com `python baixar_sprites.py`
+sprites/
+
+# backups do banco feitos antes de cada migração
+pokedex.db.bak-*
+
+# artefatos do SQLite em modo WAL
+pokedex.db-shm
+pokedex.db-wal
+
+# bytecode do Python
+__pycache__/
+*.pyc

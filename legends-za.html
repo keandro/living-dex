@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Living Dex — Legends: Z-A</title>
+<script src="tema-preload.js"></script>
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="marca"><span class="logo">◆</span> Living Dex</div>
+    <nav>
+      <a href="index.html" class="item">🏠 Início</a>
+      <div class="grupo">Living Dex</div>
+      <a href="paldea.html" class="item">🗺️ Scarlet & Violet</a>
+      <a href="legends-za.html" class="item ativo">🏙️ Legends: Z-A</a>
+      <a href="sword-shield.html" class="item">⚔️ Sword & Shield</a>
+    </nav>
+
+    <div class="sidebar-dex">
+      <div class="resumo">
+        <div class="resumo-topo">
+          <span class="nome">Legends: Z-A</span>
+          <span class="counter"><span id="done">0</span><em id="total">/0</em></span>
+        </div>
+        <div class="track"><i id="prog"></i></div>
+        <span class="legenda" id="sub">carregando…</span>
+      </div>
+
+      <input type="search" id="q" placeholder="Buscar Pokémon…" aria-label="Buscar Pokémon">
+      <button id="onlyMissing" aria-pressed="false">Só faltando</button>
+
+      <div class="subs" id="subs"></div>
+
+      <div class="grupo">Caixas</div>
+      <div class="caixas" id="nav"></div>
+    </div>
+
+    <div class="rodape">
+      <button id="tema" class="tema" aria-label="Alternar tema escuro" title="Alternar tema"></button>
+    </div>
+  </aside>
+
+  <div class="conteudo">
+    <main id="main"><p class="carregando">Carregando do servidor…</p></main>
+  </div>
+</div>
+
+<dialog id="modal"><div class="det" id="det"></div></dialog>
+
+<script src="comum.js"></script>
+<script src="livingdex.js"></script>
+<script src="legends-za.js"></script>
+</body>
+</html>
