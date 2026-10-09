@@ -1,7 +1,9 @@
 # sprites baixados do pokemondb/Bulbapedia — regenerar com `python baixar_sprites.py`
 sprites/
 
-# backups do banco feitos antes de cada migração
+# banco local: contém o progresso de captura (dado pessoal, não deve ir pro
+# repositório) — regenerar com `python montar_banco.py` (lê dados/catalogo.sql)
+pokedex.db
 pokedex.db.bak-*
 
 # artefatos do SQLite em modo WAL

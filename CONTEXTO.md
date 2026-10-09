@@ -27,7 +27,10 @@ A pasta era só um monte de arquivo solto (mais de 60 na raiz) até ficar difíc
 agora tá organizada em pastas:
 
 ```
-pokedex.db          banco SQLite (1085 Pokémon, ~900 KB)
+pokedex.db          banco SQLite (1085 Pokémon, ~900 KB) — gerado, não vai pro git (ver abaixo)
+dados/catalogo.sql   dump versionado do catálogo, sem dados de captura
+montar_banco.py       recria o pokedex.db a partir de dados/catalogo.sql
+exportar_catalogo.py  atualiza dados/catalogo.sql a partir do pokedex.db atual
 servidor.py         servidor + API, só biblioteca padrão (http.server + sqlite3)
 baixar_sprites.py   baixa os sprites (normal + shiny) do pokemondb para static/sprites/
 index.html + nacional.html + nacional.js   as duas páginas que ficam na raiz (ver por quê abaixo)
@@ -198,8 +201,11 @@ Appletun / Dipplin → Hydrapple / Flapple, e os métodos saem legíveis em port
 Dos CSVs oficiais do projeto PokéAPI
 (`https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/`): `pokemon`,
 `pokemon_species`, `pokemon_types`, `pokemon_stats`, `pokemon_abilities`, `pokemon_egg_groups`,
-`pokemon_evolution`, mais tabelas de apoio. Existe um `build_db.py` que gera o banco do zero a
-partir desses CSVs, mas ele não está nesta pasta — se precisar regerar, peça para reconstruir.
+`pokemon_evolution`, mais tabelas de apoio. Existiu um `build_db.py` que gerava o banco do zero a
+partir desses CSVs, mas ele não está nesta pasta e não reflete mais todas as correções manuais
+feitas direto no banco desde então (ver "Convenções que precisam ser mantidas" abaixo) — se
+precisar montar o catálogo do zero outra vez (ex.: adicionar Pokémon/Pokédex de geração nova em
+massa), peça para reconstruir a partir dos CSVs e reaplicar as correções descritas aqui.
 
 A **ordem regional e os tipos de cada Pokédex** (não vêm nos CSVs da PokéAPI, que só têm o dex
 nacional) foram conferidos no pokemondb, direto das páginas de cada jogo:
@@ -258,6 +264,14 @@ base de Sword/Shield + da DLC Isle of Armor).
 
 ## Decisões já tomadas (não precisa rediscutir)
 
+- **`pokedex.db` não vai pro git** — a tabela `captura` guarda progresso pessoal (o que já foi
+  capturado), e isso não devia ficar público num repositório. Em vez do binário, o que é
+  versionado é `dados/catalogo.sql`: um dump de todas as tabelas **exceto os dados de `captura`**
+  (a estrutura dela entra vazia). `exportar_catalogo.py` gera/atualiza esse dump a partir do
+  `pokedex.db` atual (rodar depois de qualquer mudança no banco — Pokédex nova, correção de dado
+  etc., pra manter o dump em dia); `montar_banco.py` faz o caminho inverso, recriando o
+  `pokedex.db` do zero a partir do dump (passo obrigatório logo após clonar o repositório, com
+  progresso de captura começando zerado). `.gitignore` ignora `pokedex.db`/`-shm`/`-wal`.
 - Servidor em Python puro, sem dependências — nada de FastAPI/Flask/venv.
 - Clique no card **abre o modal**; marcar como capturado é um botão dentro do modal.
 - **Arrastar o mouse pelo `.mark` de várias células marca/desmarca todas de uma vez.** Pressionar
