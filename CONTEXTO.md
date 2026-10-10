@@ -367,6 +367,32 @@ base de Sword/Shield + da DLC Isle of Armor).
   `order:2` no `.tipo-info` garante que ele sempre fica depois dos elementos seguintes do `.topo`
   (como o botão de capturado) na ordem visual, não só na ordem do DOM.
 
+- **Menu lateral em gaveta (drawer) no celular**, pra consertar o layout quebrado em telas estreitas
+  (a sidebar de 220px, fixa no fluxo flex do `.shell`, espremia o conteúdo principal num espaço
+  mínimo em qualquer tela abaixo de ~820px). Abaixo desse breakpoint: um botão `#menuToggle` (☰,
+  fixo no canto superior esquerdo) e um `#sidebarBackdrop` são inseridos no início do `<body>` de
+  **todas as 21 páginas** (mesmo padrão de duplicação da sidebar — sem template no servidor); a
+  `.sidebar` vira `position:fixed`, escondida via `transform:translateX(-100%)` com transição, e
+  `.conteudo` ocupa a largura toda. A lógica de abrir/fechar/clicar-fora/Escape/fechar-ao-navegar
+  fica em `static/comum.js` (compartilhado, um único listener cuida de todas as páginas). Acima do
+  breakpoint o comportamento de desktop (sidebar fixa na lateral) continua idêntico.
+- **Bug de "grid blowout" no modal mobile, já corrigido**: a `.secoes{display:grid}` (colunas das
+  seções Dados/Stats/Evolução etc. do modal) estourava a largura do diálogo em telas estreitas
+  porque um item de grid (`.sec`) tem `min-width:auto` **implícito**, que usa o min-content do
+  conteúdo em vez do tamanho do track — e isso vale mesmo quando o conteúdo problemático está vários
+  níveis abaixo (ex.: a cadeia evolutiva `.evo`, que é **recursiva**: `cadeiaHtml()` embrulha cada
+  elo da cadeia no seu próprio `<div class="evo">` aninhado, não é uma lista plana). A correção:
+  `.sec{min-width:0}` (deixa o item de grid respeitar o track em vez de ser inflado pelo conteúdo) +
+  `.sec>.evo{overflow-x:auto; flex-wrap:nowrap}` **só no mobile**, mirando com `>` (filho direto)
+  justamente pra pegar só o `.evo` mais externo e não os aninhados — assim cadeias de 3+ estágios
+  (ou com Mega Evolução) viram uma faixa com scroll horizontal próprio, em vez de estourar a tela.
+  Mesma categoria de bug corrigida preventivamente em `.evo .no` (nó da cadeia, item flex de
+  `.linha`, que sem `min-width:0` deixava nomes longos tipo "Meganium" vazarem pra fora da caixa de
+  96px) e em `.stat>*` (grid de stats). `table.dados` ganhou `table-layout:fixed` pela mesma razão
+  (tabela em auto-layout pode crescer além de 100% se o conteúdo não couber na coluna). Se aparecer
+  overflow horizontal de novo em telas estreitas, essa é a causa mais provável: procurar outro
+  container com `display:flex/grid` cujo item não tem `min-width:0` nem `overflow` não-visível.
+
 ## Pontos em aberto
 
 - Importar o progresso da versão antiga (um HTML único que salvava no `localStorage` por nome do

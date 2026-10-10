@@ -22,3 +22,34 @@ const api = async (r, opt) => {
   });
   pintar();
 })();
+
+/* menu lateral em gaveta no celular */
+(function () {
+  const btn = document.getElementById("menuToggle");
+  const sidebar = document.getElementById("sidebar");
+  const backdrop = document.getElementById("sidebarBackdrop");
+  if (!btn || !sidebar || !backdrop) return;
+
+  function fechar() {
+    sidebar.classList.remove("aberta");
+    backdrop.classList.remove("ativo");
+    btn.setAttribute("aria-expanded", "false");
+    btn.textContent = "☰";
+  }
+  function abrir() {
+    sidebar.classList.add("aberta");
+    backdrop.classList.add("ativo");
+    btn.setAttribute("aria-expanded", "true");
+    btn.textContent = "✕";
+  }
+  btn.addEventListener("click", () => {
+    sidebar.classList.contains("aberta") ? fechar() : abrir();
+  });
+  backdrop.addEventListener("click", fechar);
+  sidebar.addEventListener("click", ev => {
+    if (ev.target.closest("a")) fechar();
+  });
+  document.addEventListener("keydown", ev => {
+    if (ev.key === "Escape") fechar();
+  });
+})();
